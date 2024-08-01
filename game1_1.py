@@ -148,5 +148,9 @@ def handle_message(event):
         ranking_text = display_rankings()
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=ranking_text))
 
+    elif user_message == '吃雞雞':
+        player['chips'] += 100
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="暗號成功，你獲得了 100 個籌碼。"))
+
 if __name__ == "__main__":
     app.run()
