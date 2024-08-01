@@ -48,7 +48,7 @@ def dealer_roll():
                    f"[總合]:{dealer_sum}")
     for user_id in bets:
         line_bot_api.push_message(user_id, TextSendMessage(text=dealer_text))
-        line_bot_api.push_message(user_id, TextSendMessage(text="請輸入“擲骰子”以擲骰子。/n請等待30秒"))
+        line_bot_api.push_message(user_id, TextSendMessage(text="請輸入“擲骰子”以擲骰子。\n請等待30秒"))
         rolling_players[user_id] = bets[user_id]
         results[user_id] = None
         Thread(target=rolling_countdown, args=(user_id,)).start()
@@ -159,7 +159,7 @@ def handle_message(event):
 
     elif user_message.lower() == '下注':
         bets[user_id] = None
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請選擇比大小和下注金額，如：大500或小500/n請等待30秒"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請選擇比大小和下注金額，如：大500或小500\n請等待30秒"))
         Thread(target=countdown_timer).start()
 
     elif user_message.lower().startswith('大') or user_message.lower().startswith('小'):
