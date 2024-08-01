@@ -31,18 +31,9 @@ def reset_daily_rewards():
         player['claimed_reward'] = False
 
 def countdown_timer():
+    time.sleep(20)
     for user_id in bets:
-        line_bot_api.push_message(user_id, TextSendMessage(text="剩餘下注時間為30秒"))
-    time.sleep(15)
-    for user_id in bets:
-        line_bot_api.push_message(user_id, TextSendMessage(text="剩餘下注時間為15秒"))
-    time.sleep(10)
-    for user_id in bets:
-        line_bot_api.push_message(user_id, TextSendMessage(text="剩餘下注時間為5秒"))
-    time.sleep(5)
-    for user_id in bets:
-        line_bot_api.push_message(user_id, TextSendMessage(text="下注結束"))
-
+        line_bot_api.push_message(user_id, TextSendMessage(text="下注時間結束"))
     if bets:
         dealer_roll()
 
@@ -63,14 +54,7 @@ def dealer_roll():
         Thread(target=rolling_countdown, args=(user_id,)).start()
 
 def rolling_countdown(user_id):
-    line_bot_api.push_message(user_id, TextSendMessage(text="剩餘擲骰時間為30秒"))
-    time.sleep(15)
-    line_bot_api.push_message(user_id, TextSendMessage(text="剩餘擲骰時間為15秒"))
-    time.sleep(10)
-    line_bot_api.push_message(user_id, TextSendMessage(text="剩餘擲骰時間為5秒"))
-    time.sleep(1)
-    line_bot_api.push_message(user_id, TextSendMessage(text="擲骰時間結束"))
-
+    time.sleep(20)
     if results[user_id] is None:
         player_bet = rolling_players[user_id]
         player_dice = [random.randint(1, 6) for _ in range(3)]
@@ -80,7 +64,6 @@ def rolling_countdown(user_id):
             'sum': player_sum,
             'bet': player_bet
         }
-
     if all(results.values()):
         finalize_results()
 
@@ -96,7 +79,6 @@ def finalize_results():
                        f"[第二點]:{player_dice[1]}\n"
                        f"[第三點]:{player_dice[2]}\n"
                        f"[總合]:{player_sum}")
-        line_bot_api.push_message(user_id, TextSendMessage(text=player_text))
 
         if (player_bet['type'] == '小' and player_sum < dealer_sum) or (player_bet['type'] == '大' and player_sum > dealer_sum):
             result_text = (f"{player_name} 獲勝\n"
@@ -115,7 +97,7 @@ def finalize_results():
             players[user_id]['chips'] -= player_bet['amount']
             players[user_id]['losses'] += 1
 
-        line_bot_api.push_message(user_id, TextSendMessage(text=result_text))
+        line_bot_api.push_message(user_id, TextSendMessage(text=f"{player_text}\n\n{result_text}"))
 
     rolling_players.clear()
     results.clear()
@@ -126,11 +108,10 @@ def display_rankings():
     ranking_text = "玩家排名:\n"
     for idx, player in enumerate(sorted_players, 1):
         ranking_text += (f"第{idx}名:\n"
-                         f"---------------\n"
                          f"玩家名稱: {player['name']}\n"
                          f"籌碼: {player['chips']}\n"
                          f"勝場: {player['wins']}\n"
-                         f"敗場: {player['losses']}\n---------------\n")
+                         f"敗場: {player['losses']}\n\n")
     return ranking_text
 
 @app.route("/callback", methods=['POST'])
