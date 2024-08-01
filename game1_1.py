@@ -107,7 +107,7 @@ def display_rankings():
     sorted_players = sorted(players.values(), key=lambda x: x['chips'], reverse=True)[:5]
     ranking_text = "玩家排名:\n"
     for idx, player in enumerate(sorted_players, 1):
-        ranking_text += (f"第{idx}名:\n"
+        ranking_text += (f"\n第{idx}名:\n"
                          f"---------------\n"
                          f"玩家名稱: {player['name']}\n"
                          f"籌碼: {player['chips']}\n"
