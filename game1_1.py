@@ -1,3 +1,4 @@
+import logging
 import time
 from threading import Thread
 from flask import Flask, request, abort
@@ -8,6 +9,8 @@ import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
+
+logging.basicConfig(level=logging.INFO)
 
 line_bot_api = LineBotApi('jr8iFRvp3cE7qr4wZlIzhrGuKuCXCKj8wPPeWVujVlw59jUIsSWQr5pHdDfUxKcdomWffF/wu0OxD+hkK2gGaD99u6e74B4lT9oJWc4MlRdOuceOWwwMPUoYmE1WbvHnip0NDa+KGXMtLhKh9WH44QdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('4b824b6ade3b043dccca9df9a7829b83')
@@ -85,6 +88,8 @@ def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
 
+    logging.info(f"Received body: {body}")
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -100,18 +105,23 @@ def handle_message(event):
     user_message = event.message.text.lower()
     current_time = datetime.now()
 
+    logging.info(f"Received message: {user_message} from user: {user_id}")
+
     if not bot_enabled:
+        logging.info("Bot is disabled")
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"機器人已關機，請點選連結：https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd", sender=None))
         return
 
     # 开机命令
     if user_message == '開機5269':
+        logging.info("Enabling bot")
         bot_enabled = True
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
         return
 
     # 关机命令
     if user_message == '關機':
+        logging.info("Disabling bot")
         bot_enabled = False
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
         return
