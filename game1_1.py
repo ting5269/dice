@@ -107,6 +107,16 @@ def handle_message(event):
 
     logging.info(f"Received message: {user_message} from user: {user_id}")
 
+    if not bot_enabled:
+        if user_message == '開機5269':
+            logging.info("Enabling bot")
+            bot_enabled = True
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
+        else:
+            logging.info("Bot is disabled")
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機，請點選連結：https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd"))
+        return
+
     # 开机命令
     if user_message == '開機5269':
         logging.info("Enabling bot")
