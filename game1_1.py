@@ -101,7 +101,7 @@ def handle_message(event):
     current_time = datetime.now()
 
     if not bot_enabled:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="伺服器已關閉。請點選 [這裡](http://example.com) 以獲取更多資訊。"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="伺服器已關機，請點選連結：https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd", sender=None))
         return
 
     if user_message == '開機':
