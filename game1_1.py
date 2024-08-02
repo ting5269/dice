@@ -196,4 +196,6 @@ def wake_up_render():
         time.sleep(14 * 60)
 
 if __name__ == "__main__":
-    app.run()
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
