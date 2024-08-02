@@ -11,6 +11,7 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi('jr8iFRvp3cE7qr4wZlIzhrGuKuCXCKj8wPPeWVujVlw59jUIsSWQr5pHdDfUxKcdomWffF/wu0OxD+hkK2gGaD99u6e74B4lT9oJWc4MlRdOuceOWwwMPUoYmE1WbvHnip0NDa+KGXMtLhKh9WH44QdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('4b824b6ade3b043dccca9df9a7829b83')
+
 # 初始化遊戲數據
 players = {}
 bets = {}
@@ -97,23 +98,23 @@ def handle_message(event):
     global bot_enabled
 
     user_id = event.source.user_id
-    user_message = event.message.text
+    user_message = event.message.text.lower()
     current_time = datetime.now()
 
-    if not bot_enabled:
-        return
-
-    if user_message.lower() == '關機':
-        bot_enabled = False
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
-        return
-
-    if user_message.lower() == '開機':
+    if user_message == '開機':
         bot_enabled = True
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
         return
 
-    if user_message.lower() == 'push':
+    if not bot_enabled:
+        return
+
+    if user_message == '關機':
+        bot_enabled = False
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
+        return
+
+    if user_message == 'push':
         try:
             quota = line_bot_api.get_quota()
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"剩餘免費訊息則數: {quota['value']}"))
@@ -133,10 +134,10 @@ def handle_message(event):
 
     player = players[user_id]
 
-    if user_message.lower() == '加入遊戲':
+    if user_message == '加入遊戲':
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"歡迎加入遊戲！你有 {initial_chips} 個籌碼。"))
 
-    elif user_message.lower() == '每日簽到':
+    elif user_message == '每日簽到':
         if current_time - player['last_claimed'] >= timedelta(days=1):
             player['chips'] += daily_reward
             player['claimed_reward'] = True
@@ -145,11 +146,11 @@ def handle_message(event):
         else:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="你今天已經簽到過了，請明天再來！"))
 
-    elif user_message.lower() == '下注':
+    elif user_message == '下注':
         bets[user_id] = None
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請選擇比大小和下注金額，如：大500或小500"))
 
-    elif user_message.lower().startswith('大') or user_message.lower().startswith('小'):
+    elif user_message.startswith('大') or user_message.startswith('小'):
         try:
             bet_type = user_message[0]
             bet_amount = int(user_message[1:])
@@ -162,12 +163,12 @@ def handle_message(event):
         except ValueError:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入有效的下注金額。"))
 
-    elif user_message.lower() == '錢包':
+    elif user_message == '錢包':
         claimed_reward_text = "已領取" if player['claimed_reward'] else "未領取"
         wallet_info = f"玩家名稱: {player['name']}\n籌碼數量: {player['chips']}\n每日簽到: {claimed_reward_text}"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=wallet_info))
 
-    elif user_message.lower() == '玩家排名':
+    elif user_message == '玩家排名':
         ranking_text = display_rankings()
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=ranking_text))
 
