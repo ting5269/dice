@@ -11,12 +11,12 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi('jr8iFRvp3cE7qr4wZlIzhrGuKuCXCKj8wPPeWVujVlw59jUIsSWQr5pHdDfUxKcdomWffF/wu0OxD+hkK2gGaD99u6e74B4lT9oJWc4MlRdOuceOWwwMPUoYmE1WbvHnip0NDa+KGXMtLhKh9WH44QdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('4b824b6ade3b043dccca9df9a7829b83')
-
 # 初始化遊戲數據
 players = {}
 bets = {}
 initial_chips = 5000
 daily_reward = 5000
+bot_enabled = True
 
 def get_player_name(user_id):
     profile = line_bot_api.get_profile(user_id)
@@ -94,9 +94,32 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    global bot_enabled
+
     user_id = event.source.user_id
     user_message = event.message.text
     current_time = datetime.now()
+
+    if not bot_enabled:
+        return
+
+    if user_message.lower() == '關機':
+        bot_enabled = False
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
+        return
+
+    if user_message.lower() == '開機':
+        bot_enabled = True
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
+        return
+
+    if user_message.lower() == 'push':
+        try:
+            quota = line_bot_api.get_quota()
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"剩餘免費訊息則數: {quota['value']}"))
+        except Exception as e:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"無法取得訊息限額: {str(e)}"))
+        return
 
     if user_id not in players:
         players[user_id] = {
