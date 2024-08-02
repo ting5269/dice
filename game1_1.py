@@ -7,13 +7,16 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 import random
 from datetime import datetime, timedelta
+import requests
+import os
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-line_bot_api = LineBotApi('jr8iFRvp3cE7qr4wZlIzhrGuKuCXCKj8wPPeWVujVlw59jUIsSWQr5pHdDfUxKcdomWffF/wu0OxD+hkK2gGaD99u6e74B4lT9oJWc4MlRdOuceOWwwMPUoYmE1WbvHnip0NDa+KGXMtLhKh9WH44QdB04t89/1O/w1cDnyilFU=')
-handler = WebhookHandler('4b824b6ade3b043dccca9df9a7829b83')
+line_bot_api = LineBotApi(os.getenv('LINE_BOT_API'))
+handler = WebhookHandler(os.getenv('WEBHOOK_HANDLER'))
+
 # 初始化遊戲數據
 players = {}
 bets = {}
@@ -97,6 +100,10 @@ def callback():
 
     return 'OK'
 
+@app.route("/render_wake_up", methods=['GET'])
+def render_wake_up():
+    return 'Render is awake!', 200
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     global bot_enabled
@@ -159,7 +166,7 @@ def handle_message(event):
         bets[user_id] = None
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請選擇比大小和下注金額，如：大500或小500"))
 
-    elif user_message.startswith('大') or user_message.startswith('小'):
+    elif user_message.startswith('大')或 user_message.startswith('小'):
         try:
             bet_type = user_message[0]
             bet_amount = int(user_message[1:])
@@ -184,6 +191,16 @@ def handle_message(event):
     elif user_message == '吃雞雞':
         player['chips'] += 100
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="暗號成功，你獲得了 100 個籌碼。"))
+
+def wake_up_render():
+    while True:
+        url = os.getenv('https://dice-tvn7.onrender.com') + '/render_wake_up'
+        res = requests.get(url)
+        if res.status_code == 200:
+            print('喚醒 Render 成功')
+        else:
+            print('喚醒失敗')
+        time.sleep(14 * 60)
 
 if __name__ == "__main__":
     app.run()
