@@ -120,7 +120,7 @@ def handle_message(event):
         return
 
     # 关机命令
-    if user_message == '關機':
+    elif user_message == '關機':
         logging.info("Disabling bot")
         bot_enabled = False
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
