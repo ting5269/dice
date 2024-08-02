@@ -100,15 +100,22 @@ def handle_message(event):
     user_message = event.message.text.lower()
     current_time = datetime.now()
 
-    if user_message == '開機':
+    if not bot_enabled:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"機器人已關機，請點選連結：https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd", sender=None))
+        return
+
+    # 开机命令
+    if user_message == '開機5269':
         bot_enabled = True
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
         return
 
+    # 关机命令
     if user_message == '關機':
-        video_link = "https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd"
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"機器人已關機，請點選連結：https://youtu.be/xvFZjo5PgG0?si=PIbeotn79bwpeaYd", sender=None))
+        bot_enabled = False
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
         return
+
     if user_id not in players:
         players[user_id] = {
             'chips': initial_chips,
