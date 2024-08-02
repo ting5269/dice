@@ -100,6 +100,10 @@ def handle_message(event):
     user_message = event.message.text.lower()
     current_time = datetime.now()
 
+    if not bot_enabled:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="伺服器已關閉。請點選 [這裡](http://example.com) 以獲取更多資訊。"))
+        return
+
     if user_message == '開機':
         bot_enabled = True
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已開機。"))
@@ -107,9 +111,8 @@ def handle_message(event):
 
     if user_message == '關機':
         bot_enabled = False
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="伺服器已關機，請點選連結：https://example.com", sender=None))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="機器人已關機。"))
         return
-
     if user_id not in players:
         players[user_id] = {
             'chips': initial_chips,
