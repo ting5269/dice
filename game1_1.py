@@ -4,7 +4,7 @@ from threading import Thread
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage, ButtonsTemplate, PostbackTemplateAction, PostbackEvent
 import random
 from datetime import datetime, timedelta
 
@@ -37,8 +37,7 @@ def display_rankings():
                          f"敗場: {player['losses']}\n---------------\n")
     return ranking_text
 
-def handle_bet(user_id):
-    player_bet = bets[user_id]
+def handle_bet(user_id, bet_type, bet_amount):
     player = players[user_id]
     
     # 莊家擲骰子
@@ -60,21 +59,21 @@ def handle_bet(user_id):
                    f"[第三點]:{player_dice[2]}\n"
                    f"[總合]:{player_sum}")
 
-    if (player_bet['type'] == '小' and player_sum < dealer_sum) or (player_bet['type'] == '大' and player_sum > dealer_sum):
+    if (bet_type == '小' and player_sum < dealer_sum) or (bet_type == '大' and player_sum > dealer_sum):
         result_text = (f"{player_name} 獲勝\n"
                        f"┏━〖結算列表〗━┓\n"
-                       f"┣ {player_name} +{player_bet['amount']} 元\n"
-                       f"┣━ 餘額: {player['chips'] + player_bet['amount']} 元\n"
+                       f"┣ {player_name} +{bet_amount} 元\n"
+                       f"┣━ 餘額: {player['chips'] + bet_amount} 元\n"
                        f"┣ 結算完畢")
-        player['chips'] += player_bet['amount']
+        player['chips'] += bet_amount
         player['wins'] += 1
     else:
         result_text = (f"{player_name} 失敗\n"
                        f"┏━〖結算列表〗━┓\n"
-                       f"┣ {player_name} -{player_bet['amount']} 元\n"
-                       f"┣━ 餘額: {player['chips'] - player_bet['amount']} 元\n"
+                       f"┣ {player_name} -{bet_amount} 元\n"
+                       f"┣━ 餘額: {player['chips'] - bet_amount} 元\n"
                        f"┣ 結算完畢")
-        player['chips'] -= player_bet['amount']
+        player['chips'] -= bet_amount
         player['losses'] += 1
 
     # 清理當前玩家的下注
@@ -157,20 +156,19 @@ def handle_message(event):
 
     elif user_message == '下注':
         bets[user_id] = None
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請選擇比大小和下注金額，如：大500或小500"))
-
-    elif user_message.startswith('大') or user_message.startswith('小'):
-        try:
-            bet_type = user_message[0]
-            bet_amount = int(user_message[1:])
-            if bet_amount > 0 and player['chips'] >= bet_amount:
-                bets[user_id] = {'type': bet_type, 'amount': bet_amount}
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"{player['name']} 下注 {bet_amount} 成功"))
-                handle_bet(user_id)
-            else:
-                line_bot_api.reply_message(event.reply_token, TextSendMessage(text="你的籌碼不足或下注金額無效。請重新下注。"))
-        except ValueError:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請輸入有效的下注金額。"))
+        buttons_template = ButtonsTemplate(
+            title='請選擇比大小',
+            text='選擇大或小',
+            actions=[
+                PostbackTemplateAction(label='大', data='bet_type=大'),
+                PostbackTemplateAction(label='小', data='bet_type=小')
+            ]
+        )
+        template_message = TemplateSendMessage(
+            alt_text='選擇比大小',
+            template=buttons_template
+        )
+        line_bot_api.reply_message(event.reply_token, template_message)
 
     elif user_message == '錢包':
         claimed_reward_text = "已領取" if player['claimed_reward'] else "未領取"
@@ -184,6 +182,43 @@ def handle_message(event):
     elif user_message == '吃雞雞':
         player['chips'] += 100
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="暗號成功，你獲得了 100 個籌碼。"))
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    user_id = event.source.user_id
+    data = event.postback.data
+
+    if 'bet_type' in data:
+        bet_type = data.split('=')[1]
+        bets[user_id] = {'type': bet_type}
+        buttons_template = ButtonsTemplate(
+            title='請選擇下注金額',
+            text='選擇下注金額',
+            actions=[
+                PostbackTemplateAction(label='100', data=f'bet_amount=100'),
+                PostbackTemplateAction(label='500', data=f'bet_amount=500'),
+                PostbackTemplateAction(label='1000', data=f'bet_amount=1000'),
+                PostbackTemplateAction(label='5000', data=f'bet_amount=5000'),
+                PostbackTemplateAction(label='10000', data=f'bet_amount=10000')
+            ]
+        )
+        template_message = TemplateSendMessage(
+            alt_text='選擇下注金額',
+            template=buttons_template
+        )
+        line_bot_api.reply_message(event.reply_token, template_message)
+
+    elif 'bet_amount' in data:
+        bet_amount = int(data.split('=')[1])
+        bet_type = bets[user_id]['type']
+        player = players[user_id]
+
+        if bet_amount > 0 and player['chips'] >= bet_amount:
+            bets[user_id]['amount'] = bet_amount
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=f"{player['name']} 下注 {bet_amount} 成功"))
+            handle_bet(user_id, bet_type, bet_amount)
+        else:
+            line_bot_api.reply_message(event.reply_token, TextSendMessage(text="你的籌碼不足或下注金額無效。請重新下注。"))
 
 def wake_up_render():
     while True:
